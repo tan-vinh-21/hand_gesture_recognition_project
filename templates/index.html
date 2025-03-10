@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pneumonia Prediction</title>
+    <style>
+        body {
+            font-family: Roboto, Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .upload-box {
+            width: 100%;
+            height: 300px;
+            border: 2px dashed #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            cursor: pointer;
+            position: relative;
+            margin-bottom: 20px;
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+        }
+        .upload-box img {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+            object-fit: cover;
+            position: absolute;
+        }
+        .upload-box.borderless {
+            border: none;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Pneumonia Prediction</h2>
+        <form id="uploadForm" action="/predict" method="post" enctype="multipart/form-data">
+            <div class="upload-box" id="drop-area">
+                <input type="file" id="image" name="image" accept="image/*" required hidden>
+                <p id="drop-text">🖼️ Drag & Drop or Click to Upload</p>
+                <img id="preview" src="" alt="Image Preview">
+            </div>
+            <button type="submit">Predict</button>
+        </form>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const dropArea = document.getElementById('drop-area');
+        const inputFile = document.getElementById('image');
+        const previewImage = document.getElementById('preview');
+        const dropText = document.getElementById("drop-text");
+        const form = document.getElementById("uploadForm");
+        const resultDiv = document.getElementById("result");
+
+        dropArea.addEventListener("click", () => inputFile.click());
+
+        inputFile.addEventListener("change", function(event) {
+            handleFile(event.target.files[0]);
+        });
+
+        dropArea.addEventListener("dragover", (event) => {
+            event.preventDefault();
+        });
+
+        dropArea.addEventListener("drop", (event) => {
+            event.preventDefault();
+            const file = event.dataTransfer.files[0];
+            inputFile.files = event.dataTransfer.files;
+            handleFile(file);
+        });
+
+        function handleFile(file) {
+            if (file && file.type.startsWith("image/")) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    previewImage.src = reader.result;
+                    previewImage.style.display = "block";
+                    dropText.style.display = "none"; 
+                    dropArea.classList.add("borderless"); 
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        form.addEventListener("submit", function(event) {
+            event.preventDefault();
+            const formData = new FormData(form);
+            
+            fetch("/predict", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultDiv.innerHTML = `<h3>Result:</h3><p>${data.result}</p>`;
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                resultDiv.innerHTML = `<p style="color: red;">Failed to get prediction.</p>`;
+            });
+        });
+    </script>
+
+</body>
+</html>
